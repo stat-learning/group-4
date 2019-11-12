@@ -1,7 +1,3 @@
----
- output:
-   html_document: default
----
 #Group Proposal
 
 ##Group Members: 

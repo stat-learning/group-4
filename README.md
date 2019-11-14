@@ -8,13 +8,9 @@ Sarah Maebius
 
 Nolan Anderson
 
-## General Plan:
+## Final Topic:
 
-[insert project description]
-
-## Data:
-
-[insert data description]
+Can we predict the instrument being played from a sound recording? This project will utilize data from isolated sound recordings of different instruments being played, with possible predictors relating to unexplained differences in the frequency wave patterns, the modulation of frequency or amplitude over time, or the prevalence of different overtones in the sound. The goal will be to predict the instrument being played based on a test sound recording.
 
 ## Timeline:
 

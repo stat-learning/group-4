@@ -2,10 +2,8 @@
 title: "Instrument Classification"
 subtitle: "Data Exploration Technical Report"
 author: 
-  - Noland Anderson
-  - Tim Shinners
-  - Sarah Maebius
-output: pdf_document
+  - Noland Anderson, Tim Shinners, Sarah Maebius
+output: github_document
 ---
 
 Project Description

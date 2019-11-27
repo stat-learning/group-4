@@ -1,0 +1,135 @@
+#######################################################################
+# This file contains functions for tidying training and test data
+#######################################################################
+
+
+
+
+#Maximum filter
+note<-readMP3(file.path("~", "group-4", "Data", "UkuleleF4.mp3"))
+points<-data.frame(note@left)%>%
+  mutate(t=c(1:length(note)))
+#Filter out negligible points
+maxes<-points%>% 
+  filter(note.left>50)
+#Find Local Maxima
+for (i in c(2:(length(note)-1))){
+  if (points$note.left[i]<points$note.left[i-1] | points$note.left[i]<points$note.left[i+1]){
+    maxes<-maxes%>%
+      filter(maxes$t!=i)
+  }
+}
+#Rescale data into unit square
+note_shape<-maxes%>%
+  #Rescale units of time to be from 0 to 1
+  mutate(time=(1/(max(maxes$t)-min(maxes$t)))*(t-min(maxes$t)))%>%
+  #Rescale amplitude to be from 0 to 1
+  mutate(height=note.left/max(maxes$note.left))
+ggplot(data=note_shape, mapping=aes(x=time, y=height))+
+  geom_point()
+#^Takes an audio file and finds all the locally maximum data points
+
+
+#Choose Interval 
+note<-readMP3(file.path("~", "group-4", "Data", "UkuleleF4.mp3"))
+points<-data.frame(note@left)%>%
+  mutate(t=c(1:length(note)))
+#Find row with max volume
+maximum_volume<-points%>%
+  filter(note.left==max(points$note.left))
+#make new data frame with 1000 observations after maximum
+#1000 is changeable that's just what I thought was good. 
+chosen_interval<-points%>%
+  filter(t>maximum_volume$t)%>%
+  filter(t<(maximum_volume$t+1000))
+ggplot(data = chosen_interval, mapping = aes(x=t, y=note.left))+
+  geom_point()
+#^Takes an audio file and selects an interval of data that occurs after the loudest point in the file
+
+#Function for finding local maxima (inputs wave object, outputs a data frame of local maxima points)
+findMaxima <- function(note){
+  sample_rate<-note@samp.rate
+  points<-data.frame(note@left)%>%
+    mutate(t=c(1:length(note)))
+  attck<-points%>%
+    filter(note.left>50)
+  for (i in c(2:(length(points$note.left)-1))){
+    if (points$note.left[i]<points$note.left[i-1] | points$note.left[i]<points$note.left[i+1]){
+      attck<-attck%>%
+        filter(attck$t!=i)
+    }
+  }
+  
+#Rescale data
+  attck<-attck%>%
+    mutate(height=(note.left/max(attck$note.left)))%>%
+    mutate(time=(t-min(attck$t))/sample_rate)
+  return(attck)
+}
+
+#Loss functions
+Dloss_fun<- function(D, A, B, C, x, y){
+  r<- y- (A+B* sin(C*x - D))
+  sum(r^2)
+}
+loss_fun<- function(b, x, y){
+  r<- y- (b[1]+b[2]* sin(b[3]*x - b[4]))
+  sum(r^2)
+}
+
+#Sine fit function
+#Estimates wavelength, amplitude, and center
+#inputs a vector of wave values and min and max bounds
+#outputs a plot of the fit
+Sine_Fit<-function(wave, min, max){
+  #generating periodogram
+  library(TSA)
+  p<-periodogram(wave, plot=FALSE)
+  #exracting fundamental frequency estimate as max value from p
+  FundamentalEst<-(p$freq[which.max(p$spec)])*6.25
+  #creating data frame within sample min and max
+  WaveData<-data.frame(Displacement=wave[min:max],
+                       index=seq(1, length(wave[min:max])))
+  #estimating amplitude
+  AmplitudeEst<-.5*(max(WaveData$Displacement)-min(WaveData$Displacement))
+  #estimating midline
+  MidlineEst<- mean(c(max(WaveData$Displacement), min(WaveData$Displacement)))
+  #optimizing phase shift holding all else constant at esimates
+  PhaseShiftOptim<- optim(par= 0, fn=Dloss_fun, 
+                          method="Brent",
+                          lower=0,
+                          upper=1000,
+                          A=MidlineEst,
+                          B=AmplitudeEst,
+                          C=FundamentalEst,
+                          x=WaveData$index, 
+                          y=WaveData$Displacement)$par
+  #optimizing all parameters together
+  b_optim<- optim(par= c(MidlineEst, 
+                         AmplitudeEst, 
+                         FundamentalEst, 
+                         PhaseShiftOptim),
+                  fn=loss_fun, 
+                  x=WaveData$index, 
+                  y=WaveData$Displacement)$par
+  #plotting the fit
+  plot<-ggplot(data=WaveData, aes(x=index, y=Displacement))+
+    geom_point()+
+    stat_function(fun= function(index) b_optim[1]+
+                    b_optim[2]* sin(b_optim[3]*index - b_optim[4]), 
+                  color="red")
+  plot
+}
+
+
+#how loud frequency is in an audio file
+violin<-readMP3(file.path("~", "group-4", "Data", "ViolinD4.mp3"))
+violin<-mono(object=violin, which="left")
+p<-periodogram(violin@left)
+frequencies<-data.frame(freq=p$freq)%>%
+  mutate(spec=p$spec)%>%
+  mutate(freq=freq*violin@samp.rate)
+ggplot(data=frequencies, mapping=aes(x=freq, y=spec))+
+  geom_point()
+
+# Export data ---------------------------

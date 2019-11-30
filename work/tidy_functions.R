@@ -121,6 +121,50 @@ MedianFreq<- function(note){
   return(median(mainFreq$spec))
 }
 
+#This function returns the ratio between the 
+#strengths of the first and second lowest main 
+#Frequencies
+FreqRatio<- function(note){
+  #input must be a wave object
+  #output is an number showing 
+  #the relative strength of the median
+  p<-periodogram(note@left)
+  frequencies<-data.frame(freq=p$freq)%>%
+    mutate(spec=p$spec/max(periodogram(note@left)$spec))%>%
+    mutate(freq=freq*note@samp.rate)
+  mainFreq<-frequencies
+  
+  #Here we seek all local maxima
+  for (i in c(2:(max(frequencies$freq)-1))){
+    if (frequencies$spec[i]<frequencies$spec[i-1] | frequencies$spec[i]<frequencies$spec[i+1]){
+      mainFreq<-mainFreq%>%
+        filter(mainFreq$freq!=frequencies$freq[i])
+    }
+  }  
+  
+  #Filter out negligible values
+  mainFreq<-mainFreq%>%
+    filter(spec>0.01)
+  
+  #Filter out frequencies that are too close together
+  a<-length(mainFreq$freq)
+  for (i in c(2:length(mainFreq$freq))){
+    if (((mainFreq$freq[i]-mainFreq$freq[i-1])^2) <= 20){
+      weaker<-min(mainFreq$spec[i], mainFreq$spec[i-1])
+      mainFreq<-mainFreq%>%
+        filter(spec!=weaker)
+      a<-a-1
+    }
+    
+    if (a==i){break}
+  }
+  
+  if (length(mainFreq$freq)>1){
+    return(mainFreq$spec[1]/mainFreq$spec[2])
+  }
+  if (length(mainFreq$freq)==1){return(0)}
+}
+
 
 #Sine fit function
 #inputs a time-series vector of displacement values and a start point

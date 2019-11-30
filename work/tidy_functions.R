@@ -67,7 +67,9 @@ findMaxima <- function(note){
   return(attck)
 }
 
-#Loss functions
+
+
+#Loss functions for Sine fit
 Dloss_fun<- function(D, A, B, C, x, y){
   r<- y- (A+B* sin(C*x - D))
   sum(r^2)
@@ -78,18 +80,17 @@ loss_fun<- function(b, x, y){
 }
 
 #Sine fit function
-#Estimates wavelength, amplitude, and center
-#inputs a vector of wave values and min and max bounds
-#outputs a plot of the fit
-Sine_Fit<-function(wave, min, max){
+#inputs a time-series vector of displacement values and a start point
+#outputs a vector of four parameters of sine fit
+Sine_Fit<-function(Wave, StartPoint){
   #generating periodogram
   library(TSA)
-  p<-periodogram(wave, plot=FALSE)
+  p<-periodogram(Wave, plot=FALSE)
   #exracting fundamental frequency estimate as max value from p
   FundamentalEst<-(p$freq[which.max(p$spec)])*6.25
   #creating data frame within sample min and max
-  WaveData<-data.frame(Displacement=wave[min:max],
-                       index=seq(1, length(wave[min:max])))
+  WaveData<-data.frame(Displacement=Wave[StartPoint:(StartPoint+1000)],
+                       index=seq(1, length(Wave[StartPoint:(StartPoint+1000)])))
   #estimating amplitude
   AmplitudeEst<-.5*(max(WaveData$Displacement)-min(WaveData$Displacement))
   #estimating midline
@@ -112,14 +113,57 @@ Sine_Fit<-function(wave, min, max){
                   fn=loss_fun, 
                   x=WaveData$index, 
                   y=WaveData$Displacement)$par
-  #plotting the fit
-  plot<-ggplot(data=WaveData, aes(x=index, y=Displacement))+
-    geom_point()+
-    stat_function(fun= function(index) b_optim[1]+
-                    b_optim[2]* sin(b_optim[3]*index - b_optim[4]), 
-                  color="red")
-  plot
+  #Outputing optimal betas
+  b_optim
 }
+
+###Calculating 1st, 2nd, 3rd order residuals from sine function
+wave<-FluteA3@left
+start_point<-40000
+
+index<- seq(1, 1000)
+
+Mean<-mean(wave[start_point:(start_point+1000)])
+SS<-sum((wave[start_point:(start_point+1000)]-Mean)^2)
+
+Betas<- Sine_Fit(wave, StartPoint=start_point)
+
+Resid1<- wave[start_point:(start_point+1000)]-(Betas[1]+
+                                                 Betas[2]* sin(Betas[3]*index - Betas[4]))
+
+Mean1<-mean(Resid1)
+SS1<-sum((Resid1-Mean1)^2)
+
+Betas1<-Sine_Fit(Resid1, StartPoint=1) 
+
+Resid2<- Resid1-(Betas1[1]+
+                   Betas1[2]* sin(Betas1[3]*index - Betas1[4]))
+
+Mean2<-mean(Resid2)
+SS2<-sum((Resid2-Mean2)^2)
+
+Betas2<-Sine_Fit(Resid2, StartPoint=1) 
+
+Resid3<- Resid2-(Betas2[1]+
+                   Betas2[2]* sin(Betas2[3]*index - Betas2[4]))
+
+###Values to extract in final function:
+RMSE1<- sqrt(mean(Resid1^2))
+
+r_squared1<-1-(sum(Resid1^2)/SS)
+
+RMSE2<-sqrt(mean(Resid2^2))
+
+r_squared2<-1-(sum(Resid2^2)/SS)
+
+RMSE3<-sqrt(mean(Resid3^2))
+
+r_squared3<-1-(sum(Resid3^2)/SS)
+
+
+
+
+
 
 
 #how loud frequency is in an audio file

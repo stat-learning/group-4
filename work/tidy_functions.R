@@ -237,6 +237,24 @@ r_squared3<-1-(sum(Resid3^2)/SS)
 
 
 
+#inputs chosen_interval and outputs matrix of coefficients and residuals
+#(needs to be run after selectInterval)
+findCoeff <- function(chosen_interval){
+  #extract coefficient and r^2 from linear model
+  m <- lm(log(note.left)~ 0 + t, data = chosen_interval)
+  exp_coef <- m$coefficients
+  r_squared <- sum(resid(m)^2)
+  amp_coeff <- cbind(exp_coef, r_squared)
+  return(amp_coeff)
+}
+
+#finds the distance between the max amplitude and the start
+findDistance <- function(chosen_interval){
+  x <- chosen_interval[ which(chosen_interval$note.left==max(chosen_interval$note.left)), ]
+  origin <- chosen_interval[which(chosen_interval$t == min(chosen_interval$t)),]
+  distance <- x$t - origin$t
+  return(distance)
+}
 
 
 

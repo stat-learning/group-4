@@ -117,6 +117,81 @@ Sine_Fit<-function(Wave, StartPoint){
   b_optim
 }
 
+#This function selects 1000 data points out of a wave object
+selectInterval<- function(note, plucked){
+  #The input should be a wave object (note) 
+  #and a TRUE/FALSE value that is TRUE if the 
+  #note was plucked and FALSE otherwise
+  #The output is a data frame
+  sample_rate<-note@samp.rate
+  points<-data.frame(note@left)%>%
+    mutate(t=c(1:length(note)))
+  maximum_volume<-points%>%
+    filter(note.left==max(points$note.left))
+  sample_rate<-note@samp.rate
+  #Select the Interval
+  if (plucked==TRUE){
+    chosen_interval<-points%>%
+      filter(t>maximum_volume$t)%>%
+      filter(t<(maximum_volume$t+1000))
+  }
+  
+  if (plucked==FALSE){
+    chosen_interval<-points%>%
+      filter(t<maximum_volume$t)%>%
+      filter(t>(maximum_volume$t-1000))
+  }
+  
+  #Rescale and transform interval
+  chosen_interval<-chosen_interval%>%
+    mutate(note.left=note.left-mean(chosen_interval$note.left))%>%
+    mutate(t=t-min(chosen_interval$t))%>%
+    mutate(t=t/sample_rate)
+  max_volume<-max(chosen_interval$note.left)
+  chosen_interval<-chosen_interval%>%
+    mutate(note.left=note.left/max_volume)
+  
+  return(chosen_interval)
+}
+
+#This function calculates how many main frequencies are in the wave object
+NumberOfFrequencies<- function(note){
+  #input must be a wave object
+  #output is an integer
+  p<-periodogram(note@left)
+  frequencies<-data.frame(freq=p$freq)%>%
+    mutate(spec=p$spec/max(periodogram(note@left)$spec))%>%
+    mutate(freq=freq*note@samp.rate)
+  mainFreq<-frequencies
+  
+  #Here we seek all local maxima
+  for (i in c(2:(max(frequencies$freq)-1))){
+    if (frequencies$spec[i]<frequencies$spec[i-1] | frequencies$spec[i]<frequencies$spec[i+1]){
+      mainFreq<-mainFreq%>%
+        filter(mainFreq$freq!=frequencies$freq[i])
+    }
+  }  
+  
+  #Filter out negligible values
+  mainFreq<-mainFreq%>%
+    filter(spec>0.01)
+  
+  #Filter out frequencies that are too close together
+  a<-length(mainFreq$freq)
+  for (i in c(2:length(mainFreq$freq))){
+    if (((mainFreq$freq[i]-mainFreq$freq[i-1])^2) <= 20){
+      weaker<-min(mainFreq$spec[i], mainFreq$spec[i-1])
+      mainFreq<-mainFreq%>%
+        filter(spec!=weaker)
+      a<-a-1
+    }
+    
+    if (a==i){break}
+  }
+  
+  return(length(mainFreq$freq))
+}
+
 ###Calculating 1st, 2nd, 3rd order residuals from sine function
 wave<-FluteA3@left
 start_point<-40000

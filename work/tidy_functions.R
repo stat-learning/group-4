@@ -192,10 +192,11 @@ identifyFrequencies<- function(note){
   
   #Filter out frequencies that are too close together
   a<-length(mainFreq$freq)
+  NewMainFreq<-mainFreq
   for (i in c(2:length(mainFreq$freq))){
     if (((mainFreq$freq[i]-mainFreq$freq[i-1])^2) <= 20){
       weaker<-min(mainFreq$spec[i], mainFreq$spec[i-1])
-      mainFreq<-mainFreq%>%
+      NewMainFreq<-NewMainFreq%>%
         filter(spec!=weaker)
       a<-a-1
     }
@@ -203,7 +204,7 @@ identifyFrequencies<- function(note){
     if (a==i){break}
   }
   
-  return(mainFreq)
+  return(NewMainFreq)
 }
 #Ok so I think what needs to be done is you 
 #have a data frame (I'll call it BigDataFrame)

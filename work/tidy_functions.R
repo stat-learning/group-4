@@ -165,6 +165,67 @@ FreqRatio<- function(note){
   if (length(mainFreq$freq)==1){return(0)}
 }
 
+#######################################
+#######################################
+#######################################
+#######################################
+#######################################
+#Function for finding main frequencies
+identifyFrequencies<- function(note){
+  p<-periodogram(note@left)
+  frequencies<-data.frame(freq=p$freq)%>%
+    mutate(spec=p$spec/max(periodogram(note@left)$spec))%>%
+    mutate(freq=freq*note@samp.rate)
+  mainFreq<-frequencies
+  
+  #Here we seek all local maxima
+  for (i in c(2:(max(frequencies$freq)-1))){
+    if (frequencies$spec[i]<frequencies$spec[i-1] | frequencies$spec[i]<frequencies$spec[i+1]){
+      mainFreq<-mainFreq%>%
+        filter(mainFreq$freq!=frequencies$freq[i])
+    }
+  }  
+  
+  #Filter out negligible values
+  mainFreq<-mainFreq%>%
+    filter(spec>0.01)
+  
+  #Filter out frequencies that are too close together
+  a<-length(mainFreq$freq)
+  for (i in c(2:length(mainFreq$freq))){
+    if (((mainFreq$freq[i]-mainFreq$freq[i-1])^2) <= 20){
+      weaker<-min(mainFreq$spec[i], mainFreq$spec[i-1])
+      mainFreq<-mainFreq%>%
+        filter(spec!=weaker)
+      a<-a-1
+    }
+    
+    if (a==i){break}
+  }
+  
+  return(mainFreq)
+}
+#Ok so I think what needs to be done is you 
+#have a data frame (I'll call it BigDataFrame)
+#with all the observations
+#and then you say
+#
+#BigDataFrame<-BigDataFrame%>%
+# mutate(NumberOfFreqs=0)%>%
+# mutate(MedianFreq=0)%>%
+# mutate(FreqRatio=0)
+#
+#and then make a for loop and say
+
+#for (each observation):
+#freq_data<-identifyFrequencies(observation)
+#BigDataFrame$NumberOfFreqs[i]<-length(freq_data$spec)
+#BigDataFrame$MedianFreq[i]<-median(freq_data$spec)
+#BigDataFrame$FreqRatio[i]<-freq_data$freq[1]/freq_data$freq[2]
+#######################################
+#######################################
+#######################################
+#######################################
 
 #Sine fit function
 #inputs a time-series vector of displacement values and a start point

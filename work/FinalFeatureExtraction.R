@@ -20,19 +20,19 @@ DataFrame<- function(WaveObject){
 
 findMaxima <- function(note){
   sample_rate<-note@samp.rate
-  points<-data.frame(note@left)%>%
-    mutate(t=c(1:length(note)))
-  attck<-points%>%
+  attck<-data.frame(note@left)%>%
+    mutate(t=c(1:length(note@left)),
+           Reject=FALSE)%>%
     filter(note.left>100)
-  for (i in c(2:(length(points$note.left)-1))){
-    if (points$note.left[i]<points$note.left[i-1] | points$note.left[i]<points$note.left[i+1]){
-      attck<-attck%>%
-        filter(attck$t!=i)
+  for (i in c(2:(length(attck$note.left)-1))){
+    if (attck$note.left[i]<attck$note.left[i-1] |
+        attck$note.left[i]<attck$note.left[i+1]){
+      attck$Reject[i]<-TRUE
     }
   }
-  
   #Rescale data
   attck<-attck%>%
+    filter(Reject==FALSE)%>%
     mutate(height=(note.left/max(attck$note.left)))%>%
     mutate(time=(t-min(attck$t))/sample_rate)
   return(attck)
@@ -69,35 +69,31 @@ findCoeff <- function(TimeData){
 
 identifyFrequencies<- function(note){
   p<-periodogram(note@left)
-  frequencies<-data.frame(freq=p$freq)%>%
-    mutate(spec=p$spec/max(periodogram(note@left)$spec))%>%
-    mutate(freq=freq*note@samp.rate)
-  mainFreq<-frequencies
-  
+  mainFreq<-data.frame(freq=p$freq)%>%
+    mutate(spec=p$spec/max(p$spec),
+           freq=freq*note@samp.rate,
+           Reject=FALSE)
   #Here we seek all local maxima
-  for (i in c(2:(max(frequencies$freq)-1))){
-    if (frequencies$spec[i]<frequencies$spec[i-1] | frequencies$spec[i]<frequencies$spec[i+1]){
-      mainFreq<-mainFreq%>%
-        filter(mainFreq$freq!=frequencies$freq[i])
+  for (i in c(2:(max(mainFreq$freq)-1))){
+    if (mainFreq$spec[i]<mainFreq$spec[i-1] |
+        mainFreq$spec[i]<mainFreq$spec[i+1]){
+      mainFreq$Reject[i]<-TRUE
     }
-  }  
-  
-  #Filter out negligible values
-  mainFreq<-mainFreq%>%
-    filter(spec>0.01)
-  
-  #Filter out frequencies that are too close together
-  a<-length(mainFreq$freq)
-  for (i in c(2:length(mainFreq$freq))){
-    if (((mainFreq$freq[i]-mainFreq$freq[i-1])^2) <= 20){
-      weaker<-min(mainFreq$spec[i], mainFreq$spec[i-1])
-      mainFreq<-mainFreq%>%
-        filter(spec!=weaker)
-      a<-a-1
-    }
-    
-    if (a==i){break}
   }
+  mainFreq<-mainFreq%>%
+    filter(Reject==FALSE,
+           spec>0.01)
+  #Selecting only frequencies that are max in their 'neighborhood'
+  a<-length(mainFreq$freq)
+  for (i in c(1:a)){
+    Neighborhood<-filter(mainFreq, freq>mainFreq$freq[i]-30 &
+                           freq<mainFreq$freq[i]+30
+    )
+    if(mainFreq$spec[i]!=max(Neighborhood$spec)){mainFreq$Reject[i]<-TRUE}
+  }
+  mainFreq<-mainFreq%>%
+    filter(Reject==FALSE)%>%
+    select(freq, spec)
   
   return(mainFreq)
 }
@@ -195,14 +191,16 @@ Feature_Extract<- function(WaveObject){
   ###Sine fit indicators
   wave<-Wave1[,1]
   
-  start_point<- min(which(wave>500))+2000
+  start_point<- min(which(wave>500))+5000
   
   index<- seq(1, 1000)
   
-  Mean<-mean(wave[start_point:(start_point+1000)])
-  SS<-sum((wave[start_point:(start_point+1000)]-Mean)^2)
+  Mean<-mean(wave[start_point:(start_point+5000)])
+  SS<-sum((wave[start_point:(start_point+5000)]-Mean)^2)
   
   Betas<- Sine_Fit(wave, StartPoint=start_point)
+  
+  
   
   Resid1<- wave[start_point:(start_point+1000)]-(Betas[1]+
                                                    Betas[2]* sin(Betas[3]*index - Betas[4]))
@@ -230,13 +228,13 @@ Feature_Extract<- function(WaveObject){
   ###
   RMSE2<-sqrt(mean(Resid2^2))
   ###
-  r_squared2<-1-(sum(Resid2^2)/SS)
+  r_squared2<-1-(sum(Resid2^2)/SS1)
   ###
   RMSE3<-sqrt(mean(Resid3^2))
   ###
-  r_squared3<-1-(sum(Resid3^2)/SS)
+  r_squared3<-1-(sum(Resid3^2)/SS2)
   ###
-  return(c(Attack, 
+  return(c(Attack[1], 
            DecayCoeff, 
            DecayDetermination, 
            DecaySignificance, 
@@ -292,4 +290,5 @@ colnames(Instruments) <- c("FileName",
 )
 
 View(Instruments)
+
 

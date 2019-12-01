@@ -289,6 +289,20 @@ colnames(Instruments) <- c("FileName",
                            "r_squared3"
 )
 
+#Generating variable for which instrument (response variable)
+
+
+Instruments<-Instruments%>%
+  mutate(instrument=case_when(
+    substr(FileName, 1, 4)=="Flut"~"Flute",
+    substr(FileName, 1, 4)=="Guit"~"Guitar",
+    substr(FileName, 1, 4)=="Mand"~"Mandolin",
+    substr(FileName, 1, 4)=="Pian"~"Piano",
+    substr(FileName, 1, 4)=="Ukul"~"Ukulele",
+    substr(FileName, 1, 4)=="Viol"~"Violin"
+  ))
+
+
 View(Instruments)
 
 

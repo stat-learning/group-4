@@ -123,15 +123,15 @@ IndividualMisclassrates3<-data.frame(IndividualMisclassRates3)
 ```{r}
 #boosted tree with more variables (possible collinearity)
 
-Instruments <- na.omit(Instruments)
+sub_instrument1 <- subset(Instruments, select = -c(X1, FileName, DecayDetermination, FundamentalStrengthRatio, RMSE2, RMSE3, r_squared2, r_squared3))
+sub_instrument1 <- na.omit(sub_instrument1)
 
 set.seed(1)
-boost2 <- gbm(instrument ~., data = Instruments, n.trees = 50, interaction.depth = 1, shrinkage = 0.1, distribution = "multinomial")
+boost2 <- gbm(instrument ~., data = sub_instrument1, n.trees = 50, interaction.depth = 1, shrinkage = 0.1, distribution = "multinomial")
 
 #Misclassification rate
 
 boost_yhat2<-predict(boost2, type="response", n.trees=50)
-INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
 predicted4 <- INSTRUMENTS[apply(boost_yhat2, 1, which.max)]
 conf_mat4 <- table(predicted4, Instruments$instrument)
 conf_mat4
@@ -144,8 +144,8 @@ for (i in 1:6){
   NumberIncorrect<-sum(Predictions[-i])
   IndividualMisclassRates4[i]<-NumberIncorrect/NumberPredictions
 }
-IndividualMisclassrates4<-data.frame(IndividualMisclassrates4)
-`rownames<-`(IndividualMisclassrates4, INSTRUMENTS)
+IndividualMisclassrates4<-data.frame(IndividualMisclassRates4)
+`rownames<-`(IndividualMisclassRates4, INSTRUMENTS)
 ```
 
 

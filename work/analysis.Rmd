@@ -32,6 +32,41 @@ corr
 ```
 
 ```{r}
+#looking at relationships between variables and response
+ggplot(Instruments, mapping = aes(y = Attack, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = DecayCoeff, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = NumberFrequencies, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = MedianFreqStrength, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = DecaySignificance, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = RMSE1, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = RMSE2, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = RMSE2, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = RMSE3, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = r_squared1, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = r_squared2, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = r_squared3, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = FirstStrengthRatio, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = FundamentalStrengthRatio, x = instrument)) +
+  geom_boxplot()
+ggplot(Instruments, mapping = aes(y = FundamentalStrength, x = instrument)) +
+  geom_boxplot()
+```
+
+
+```{r}
 library(MASS)
 #Linear Discriminant Analysis
 
@@ -146,6 +181,32 @@ for (i in 1:6){
 }
 IndividualMisclassrates4<-data.frame(IndividualMisclassRates4)
 `rownames<-`(IndividualMisclassRates4, INSTRUMENTS)
+```
+```{r}
+#boosted tree with all variables
+sub_instrument2 <- subset(Instruments, select = -c(X1, FileName))
+sub_instrument2 <- na.omit(sub_instrument2)
+
+set.seed(1)
+boost3 <- gbm(instrument ~., data = sub_instrument2, n.trees = 50, interaction.depth = 1, shrinkage = 0.1, distribution = "multinomial")
+
+#Misclassification rate
+
+boost_yhat3<-predict(boost3, type="response", n.trees=50)
+predicted5 <- INSTRUMENTS[apply(boost_yhat3, 1, which.max)]
+conf_mat5 <- table(predicted5, Instruments$instrument)
+conf_mat5
+MisclassRate5<-1-sum(diag(conf_mat4))/nrow(Instruments)
+MisclassRate5
+IndividualMisclassRates5<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat5[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates5[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates5<-data.frame(IndividualMisclassRates5)
+`rownames<-`(IndividualMisclassRates5, INSTRUMENTS)
 ```
 
 

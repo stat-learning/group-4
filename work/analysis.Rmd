@@ -1,0 +1,61 @@
+---
+title: "analysis"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Load data
+Instruments <- read_csv("/home/samaebius/group-4/data/Instruments.csv")
+
+Instruments<-Instruments%>%
+  mutate(instrument=case_when(
+    substr(FileName, 1, 4)=="Flut"~"Flute",
+    substr(FileName, 1, 4)=="Guit"~"Guitar",
+    substr(FileName, 1, 4)=="Mand"~"Mandolin",
+    substr(FileName, 1, 4)=="Pian"~"Piano",
+    substr(FileName, 1, 4)=="Ukul"~"Ukulele",
+    substr(FileName, 1, 4)=="Viol"~"Violin"
+  ))
+
+#Correlation matrix
+corr <- cor(Instruments[-c(1:2, 18)])
+corr
+
+#Conclusion: Drop DecayDetermination, FundamentalStrengthRatio, RMSE2, RMSE3
+```
+
+```{r}
+library(MASS)
+#Linear Discriminant Analysis
+
+sub_instrument <- subset(Instruments, select = -c(X1, FileName, DecayDetermination, DecaySignificance, FundamentalStrengthRatio, RMSE2, RMSE3, RMSE1, r_squared1, r_squared2, r_squared3))
+
+lda <- lda(instrument ~ ., data = sub_instrument, family = multinomial)
+lda
+
+lda_pred <- predict(lda, sub_instrument)
+lda_pred
+```
+
+```{r}
+qda <- qda(instrument ~ ., data = sub_instrument, family = multinomial)
+qda
+```
+
+```{r}
+#boosted tree
+library(gbm)
+
+sub_instrument <- na.omit(sub_instrument)
+
+set.seed(1)
+boost <- gbm(instrument ~., data = sub_instrument, n.trees = 50, interaction.depth = 1, shrinkage = 0.1, distribution = "multinomial")
+
+boost
+#Note: removed 3 observations with NAs
+```
+

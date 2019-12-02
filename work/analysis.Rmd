@@ -21,6 +21,9 @@ Instruments<-Instruments%>%
     substr(FileName, 1, 4)=="Viol"~"Violin"
   ))
 
+#Test and train data
+
+
 #Correlation matrix
 corr <- cor(Instruments[-c(1:2, 18)])
 corr
@@ -39,6 +42,8 @@ lda
 
 lda_pred <- predict(lda, sub_instrument)
 lda_pred
+
+
 ```
 
 ```{r}
@@ -55,7 +60,32 @@ sub_instrument <- na.omit(sub_instrument)
 set.seed(1)
 boost <- gbm(instrument ~., data = sub_instrument, n.trees = 50, interaction.depth = 1, shrinkage = 0.1, distribution = "multinomial")
 
-boost
+#Misclassification rate
+
+boostyhat1<-predict(boost, type="response", n.trees=50)
+INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
+predicted1 <- INSTRUMENTS[apply(boostyhat1, 1, which.max)]
+conf_mat1 <- table(predicted1, Instruments$instrument)
+conf_mat1
+MisclassRate1<-1-sum(diag(conf_mat1))/nrow(Instruments)
+MisclassRate1
+IndividualMisclassRates1<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat1[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates1[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates1<-data.frame(IndividualMisclassRates1)
+`rownames<-`(IndividualMisclassrates1, INSTRUMENTS)
+
+
+
 #Note: removed 3 observations with NAs
+```
+
+```{r}
+#pca
+
 ```
 

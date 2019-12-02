@@ -40,31 +40,12 @@ sub_instrument <- subset(Instruments, select = -c(X1, FileName, DecayDeterminati
 lda <- lda(instrument ~ ., data = sub_instrument, family = multinomial)
 lda
 
-lda_pred <- predict(lda, sub_instrument)
-lda_pred
-
-
-```
-
-```{r}
-qda <- qda(instrument ~ ., data = sub_instrument, family = multinomial)
-qda
-```
-
-```{r}
-#boosted tree
-library(gbm)
-
-sub_instrument <- na.omit(sub_instrument)
-
-set.seed(1)
-boost <- gbm(instrument ~., data = sub_instrument, n.trees = 50, interaction.depth = 1, shrinkage = 0.1, distribution = "multinomial")
 
 #Misclassification rate
 
-boostyhat1<-predict(boost, type="response", n.trees=50)
+lda_yhat<-predict(lda, type="response")
 INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
-predicted1 <- INSTRUMENTS[apply(boostyhat1, 1, which.max)]
+predicted1 <- INSTRUMENTS[apply(lda_yhat, 1, which.max)]
 conf_mat1 <- table(predicted1, Instruments$instrument)
 conf_mat1
 MisclassRate1<-1-sum(diag(conf_mat1))/nrow(Instruments)
@@ -80,9 +61,93 @@ IndividualMisclassrates1<-data.frame(IndividualMisclassRates1)
 `rownames<-`(IndividualMisclassrates1, INSTRUMENTS)
 
 
+```
+
+```{r}
+qda <- qda(instrument ~ ., data = sub_instrument, family = multinomial)
+qda
+
+#Misclassification rate
+
+qda_yhat<-predict(boost, type="response", n.trees=50)
+INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
+predicted2 <- INSTRUMENTS[apply(qda_yhat, 1, which.max)]
+conf_mat2 <- table(predicted2, Instruments$instrument)
+conf_mat2
+MisclassRate2<-1-sum(diag(conf_mat2))/nrow(Instruments)
+MisclassRate2
+IndividualMisclassRates2<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat2[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates2[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates2<-data.frame(IndividualMisclassRates2)
+`rownames<-`(IndividualMisclassrates2, INSTRUMENTS)
+```
+
+```{r}
+#boosted tree
+library(gbm)
+
+sub_instrument <- na.omit(sub_instrument)
+
+set.seed(1)
+boost <- gbm(instrument ~., data = sub_instrument, n.trees = 50, interaction.depth = 1, shrinkage = 0.1, distribution = "multinomial")
+
+#Misclassification rate
+
+boost_yhat<-predict(boost, type="response", n.trees=50)
+INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
+predicted3 <- INSTRUMENTS[apply(boost_yhat, 1, which.max)]
+conf_mat3 <- table(predicted3, Instruments$instrument)
+conf_mat3
+MisclassRate3<-1-sum(diag(conf_mat3))/nrow(Instruments)
+MisclassRate3
+IndividualMisclassRates3<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat3[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates3[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates3<-data.frame(IndividualMisclassRates3)
+`rownames<-`(IndividualMisclassrates3, INSTRUMENTS)
+
+
 
 #Note: removed 3 observations with NAs
 ```
+
+```{r}
+#boosted tree with more variables (possible collinearity)
+
+Instruments <- na.omit(Instruments)
+
+set.seed(1)
+boost2 <- gbm(instrument ~., data = Instruments, n.trees = 50, interaction.depth = 1, shrinkage = 0.1, distribution = "multinomial")
+
+#Misclassification rate
+
+boost_yhat2<-predict(boost2, type="response", n.trees=50)
+INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
+predicted4 <- INSTRUMENTS[apply(boost_yhat2, 1, which.max)]
+conf_mat4 <- table(predicted4, Instruments$instrument)
+conf_mat4
+MisclassRate4<-1-sum(diag(conf_mat4))/nrow(Instruments)
+MisclassRate4
+IndividualMisclassRates4<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat4[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates4[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates4<-data.frame(IndividualMisclassrates4)
+`rownames<-`(IndividualMisclassrates4, INSTRUMENTS)
+```
+
 
 ```{r}
 #pca

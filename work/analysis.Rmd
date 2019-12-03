@@ -5,11 +5,13 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
 ```
 
 ```{r Load data}
 #Load data
-Instruments <- read_csv("/home/samaebius/group-4/data/Instruments.csv")
+Instruments <- read.csv("/home/samaebius/group-4/data/Instruments.csv")
 
 Instruments<-Instruments%>%
   mutate(instrument=case_when(
@@ -264,6 +266,6 @@ IndividualMisclassrates6<-data.frame(IndividualMisclassRates6)
 
 ```{r}
 #pca
-
+prcomp()
 ```
 

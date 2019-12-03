@@ -189,7 +189,9 @@ Feature_Extract<- function(WaveObject){
   FirstStrengthRatio<-RelativeFreq[2]/RelativeFreq[1]
   
   ###Sine fit indicators
-  wave<-Wave1[,1]
+  waveRAW<-Wave1[,1]
+  
+  wave<-waveRAW/max(waveRAW)
   
   start_point<- min(which(wave>500))+5000
   

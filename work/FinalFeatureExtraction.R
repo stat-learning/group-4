@@ -25,7 +25,7 @@ findMaxima <- function(note){
   attck<-data.frame(note@left)%>%
     mutate(t=c(1:length(note@left)),
            Reject=FALSE)%>%
-    filter(note.left>100)
+    filter(note.left>(.02*max(note.left)))
   for (i in c(2:(length(attck$note.left)-1))){
     if (attck$note.left[i]<attck$note.left[i-1] |
         attck$note.left[i]<attck$note.left[i+1]){
@@ -46,14 +46,16 @@ findMaxima <- function(note){
 #######################################################################
 
 findDistance<- function(wave){
-  x<-which(wave[,1]==max(wave[,1]))
-  origin<- min(which(wave[,1]>500))
+  Wave<-wave[,1]/max(wave[,1])
+  x<-which(Wave==max(Wave))
+  origin<- min(which(Wave>.05))
   distance<-x-origin
   distance
 }
 
 findCoeff <- function(TimeData){
-  StartPoint<- min(which(TimeData$note.left>500))
+  TimeData$note.left<-TimeData$note.left/max(TimeData$note.left)
+  StartPoint<- min(which(TimeData$note.left>.05))
   Data<-TimeData[StartPoint:nrow(TimeData),]
   #extract coefficient and r^2 from linear model
   m <- lm(log(note.left)~ time, data = Data)
@@ -221,14 +223,12 @@ Feature_Extract<- function(WaveObject){
   
   Mean1<-mean(Resid1)
   SS1<-sum((Resid1-Mean1)^2)
-  print(SS1)
   Betas1<-Sine_Fit(Resid1) 
   
   Resid2<- Resid_fun(Resid1, Betas1)
   
   Mean2<-mean(Resid2)
   SS2<-sum((Resid2-Mean2)^2)
-  print(SS2)
   Betas2<-Sine_Fit(Resid2) 
   
   Resid3<- Resid_fun(Resid2, Betas2)
@@ -291,7 +291,7 @@ out.file<-""
 file.names <- dir(path)
 
 FinalData <- matrix(nrow = length(file.names), ncol = 18)
-for(i in 1:3){
+for(i in 4:7){
   FinalData[i,1]<-file.names[i]
   wave.object<-readMP3(file.names[i])%>%
     mono(which="both")

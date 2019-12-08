@@ -1,8 +1,8 @@
 #######################################################################
 # This file contains final code for generating data from recordings
 #######################################################################
-
-
+library(TSA)
+library(dplyr)
 #######################################################################
 # Functions to be defined beforehand
 #######################################################################
@@ -86,8 +86,8 @@ identifyFrequencies<- function(note){
   #Selecting only frequencies that are max in their 'neighborhood'
   a<-length(mainFreq$freq)
   for (i in c(1:a)){
-    Neighborhood<-filter(mainFreq, freq>mainFreq$freq[i]-30 &
-                           freq<mainFreq$freq[i]+30
+    Neighborhood<-filter(mainFreq, freq>mainFreq$freq[i]*.9 &
+                           freq<mainFreq$freq[i]*1.10
     )
     if(mainFreq$spec[i]!=max(Neighborhood$spec)){mainFreq$Reject[i]<-TRUE}
   }
@@ -104,7 +104,6 @@ identifyFrequencies<- function(note){
 #######################################################################
 #######################################################################
 
-
 #Loss functions for Sine fit
 Dloss_fun<- function(D, A, B, C, x, y){
   r<- y- (A+B* sin(C*x - D))
@@ -115,18 +114,25 @@ loss_fun<- function(b, x, y){
   sum(r^2)
 }
 
+#Function to generate residuals 
+Resid_fun<-function(Data, Betas){
+  Resid1<- Data-(Betas[1]+ 
+                   Betas[2]* sin(Betas[3]*index -Betas[4]))
+  Resid1
+}
+
+
 #Sine fit function
 #inputs a time-series vector of displacement values and a start point
 #outputs a vector of four parameters of sine fit
-Sine_Fit<-function(Wave, StartPoint){
+Sine_Fit<-function(Wave){
   #generating periodogram
-  library(TSA)
   p<-periodogram(Wave, plot=FALSE)
   #exracting fundamental frequency estimate as max value from p
   FundamentalEst<-(p$freq[which.max(p$spec)])*6.25
   #creating data frame within sample min and max
-  WaveData<-data.frame(Displacement=Wave[StartPoint:(StartPoint+1000)],
-                       index=seq(1, length(Wave[StartPoint:(StartPoint+1000)])))
+  WaveData<-data.frame(Displacement=Wave,
+                       index=seq(1, length(Wave)))
   #estimating amplitude
   AmplitudeEst<-.5*(max(WaveData$Displacement)-min(WaveData$Displacement))
   #estimating midline
@@ -155,9 +161,6 @@ Sine_Fit<-function(Wave, StartPoint){
 
 
 
-
-
-
 #######################################################################
 # Final feature extraction function:
 #######################################################################
@@ -168,7 +171,7 @@ Feature_Extract<- function(WaveObject){
   WaveAmpMax<-findMaxima(WaveObject)
   RelativeFreq<-identifyFrequencies(WaveObject)$spec
   ###
-  Attack<-findDistance(Wave1)
+  Attack<-findDistance(Wave1)/(WaveObject@samp.rate)
   
   DecayIndicators<-findCoeff(WaveAmpMax)
   ###
@@ -189,39 +192,54 @@ Feature_Extract<- function(WaveObject){
   FirstStrengthRatio<-RelativeFreq[2]/RelativeFreq[1]
   
   ###Sine fit indicators
-  waveRAW<-Wave1[,1]
+  waveRAW<-WaveObject@left
+  waveSCALE<-waveRAW/max(waveRAW)
+  Note_start<- min(which(waveSCALE>.05))
+  R2Values<- rep(NA, 20)
+  for (i in 1:20){
+    Sine_Start<-Note_start+(i*(1000))
+    wave<-waveSCALE[Sine_Start:(Sine_Start+1000)]
+    Mean<-mean(wave)
+    SS<-sum((wave-Mean)^2)
+    Betas<- Sine_Fit(wave)
+    Resid1<- Resid_fun(wave, Betas)
+    R2Values[i]<-1-(sum(Resid1^2)/SS)
+  }
   
-  wave<-waveRAW/max(waveRAW)
+  start_point<-Note_start+(which.max(R2Values)*1000)
   
-  start_point<- min(which(wave>500))+5000
+  wave<-waveSCALE[start_point:(start_point+1000)]
   
-  index<- seq(1, 1000)
+  Mean<-mean(wave)
+  SS<-sum((wave-Mean)^2)
   
-  Mean<-mean(wave[start_point:(start_point+5000)])
-  SS<-sum((wave[start_point:(start_point+5000)]-Mean)^2)
+  Betas<- Sine_Fit(wave)
   
-  Betas<- Sine_Fit(wave, StartPoint=start_point)
-  
-  
-  
-  Resid1<- wave[start_point:(start_point+1000)]-(Betas[1]+
-                                                   Betas[2]* sin(Betas[3]*index - Betas[4]))
+  Resid1<- Resid_fun(wave, Betas)
   
   Mean1<-mean(Resid1)
   SS1<-sum((Resid1-Mean1)^2)
+  print(SS1)
+  Betas1<-Sine_Fit(Resid1) 
   
-  Betas1<-Sine_Fit(Resid1, StartPoint=1) 
-  
-  Resid2<- Resid1-(Betas1[1]+
-                     Betas1[2]* sin(Betas1[3]*index - Betas1[4]))
+  Resid2<- Resid_fun(Resid1, Betas1)
   
   Mean2<-mean(Resid2)
   SS2<-sum((Resid2-Mean2)^2)
+  print(SS2)
+  Betas2<-Sine_Fit(Resid2) 
   
-  Betas2<-Sine_Fit(Resid2, StartPoint=1) 
+  Resid3<- Resid_fun(Resid2, Betas2)
   
-  Resid3<- Resid2-(Betas2[1]+
-                     Betas2[2]* sin(Betas2[3]*index - Betas2[4]))
+  #boosted residuals
+  index=seq(1, 1001)
+  
+  BoostedResid<-wave-(Betas[1]+
+                        Betas[2]* sin(Betas[3]*index - Betas[4])+
+                        Betas1[1]+
+                        Betas1[2]* sin(Betas1[3]*index - Betas1[4])+
+                        Betas2[1]+
+                        Betas2[2]* sin(Betas2[3]*index - Betas2[4]))
   
   ###
   RMSE1<- sqrt(mean(Resid1^2))
@@ -236,6 +254,10 @@ Feature_Extract<- function(WaveObject){
   ###
   r_squared3<-1-(sum(Resid3^2)/SS2)
   ###
+  RMSEBoosted<-sqrt(mean(BoostedResid^2))
+  ###
+  r_squaredBoosted<-1-(sum(BoostedResid^2)/SS)
+  
   return(c(Attack[1], 
            DecayCoeff, 
            DecayDetermination, 
@@ -250,7 +272,9 @@ Feature_Extract<- function(WaveObject){
            RMSE2,
            r_squared2,
            RMSE3,
-           r_squared3
+           r_squared3,
+           RMSEBoosted,
+           r_squaredBoosted
            ))
 }
 
@@ -259,17 +283,18 @@ Feature_Extract<- function(WaveObject){
 # Generating Data Set:
 #######################################################################
 
-setwd("~/group-4/Data")
-path = "~/group-4/Data"
+setwd("~/group-4/Data/Web Data/")
+path = "~/group-4/Data/Web Data/"
 out.file<-""
 file.names <- dir(path)
 
-FinalData <- matrix(nrow = length(file.names), ncol = 16)
-for(i in 1:length(file.names)){
+FinalData <- matrix(nrow = length(file.names), ncol = 18)
+for(i in 1:3){
   FinalData[i,1]<-file.names[i]
   wave.object<-readMP3(file.names[i])%>%
     mono(which="both")
-  FinalData[i,2:16]<-Feature_Extract(wave.object)
+  FinalData[i,2:18]<-Feature_Extract(wave.object)
+  print(i)
 }
 
 Instruments<-data.frame(FinalData)
@@ -288,7 +313,9 @@ colnames(Instruments) <- c("FileName",
                            "RMSE2",
                            "r_squared2",
                            "RMSE3",
-                           "r_squared3"
+                           "r_squared3",
+                           "RMSEBoosted",
+                           "r_squaredBoosted"
 )
 
 #Generating variable for which instrument (response variable)
@@ -296,15 +323,20 @@ colnames(Instruments) <- c("FileName",
 
 Instruments<-Instruments%>%
   mutate(instrument=case_when(
-    substr(FileName, 1, 4)=="Flut"~"Flute",
-    substr(FileName, 1, 4)=="Guit"~"Guitar",
-    substr(FileName, 1, 4)=="Mand"~"Mandolin",
-    substr(FileName, 1, 4)=="Pian"~"Piano",
-    substr(FileName, 1, 4)=="Ukul"~"Ukulele",
-    substr(FileName, 1, 4)=="Viol"~"Violin"
+    substr(FileName, 1, 4)=="flut"~"Flute",
+    substr(FileName, 1, 4)=="guit"~"Guitar",
+    substr(FileName, 1, 4)=="mand"~"Mandolin",
+    substr(FileName, 1, 4)=="pian"~"Piano",
+    substr(FileName, 1, 4)=="ukul"~"Ukulele",
+    substr(FileName, 1, 4)=="viol"~"Violin"
   ))
+Instruments$instrument<-as.factor(Instruments$instrument)
 
+levels(Instruments$instrument)<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
 
+for(i in 2:18){
+  Instruments[,i]<-as.numeric(as.character(Instruments[,i]))
+}
 View(Instruments)
 
 

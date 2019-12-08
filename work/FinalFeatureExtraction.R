@@ -7,6 +7,8 @@ library(dplyr)
 # Functions to be defined beforehand
 #######################################################################
 
+library(TSA)
+library(dplyr)
 
 #####Functions to generate data
 #######################################################################

@@ -1,0 +1,246 @@
+---
+title: "models"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("~/group-4/data/Recorded Data/")
+InstrumentTestData<-read.csv("~/group-4/data/Recorded Data/InstrumentTestData.csv")
+setwd("~/group-4/data/Web Data/")
+InstrumentTrainingData<-read.csv("~/group-4/data/Web Data/InstrumentTrainingData.csv")
+library(randomForest)
+#default settings
+set.seed(1)
+RandomForest1<-randomForest(y=InstrumentTrainingData$instrument, x=InstrumentTrainingData[,-c(1,2,11,20)],
+            data=InstrumentTrainingData)
+
+RandomForest1
+varImpPlot(RandomForest1)
+yhat1<-predict(RandomForest1, newdata = InstrumentTestData[,-c(1,2,11,20)], type="response")
+INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
+conf_mat1<- table(yhat1, InstrumentTestData$instrument)
+conf_mat1
+MisclassRate1<-1-sum(diag(conf_mat1))/nrow(InstrumentTestData)
+MisclassRate1
+IndividualMisclassRates1<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat1[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates1[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates1<-data.frame(IndividualMisclassRates1)
+`rownames<-`(IndividualMisclassrates1, INSTRUMENTS)
+
+
+library(gbm)
+set.seed(2)
+Boosted1<- gbm(instrument~Attack+
+              DecayCoeff+
+              DecayDetermination+
+              DecaySignificance+
+              NumberFrequencies+
+              MedianFreqStrength+
+              FundamentalStrength+
+              FundamentalStrengthRatio+
+              RMSE1+
+              r_squared1+
+              RMSE2+
+              r_squared2+
+              RMSE3+
+              r_squared3+
+              RMSEBoosted+
+              r_squaredBoosted, 
+             data=InstrumentTrainingData, distribution= "multinomial", n.trees=500, interaction.depth=1, shrinkage=.01)
+predicted2<-predict(Boosted1, newdata = InstrumentTestData[,-c(1,2,11,20)], type="response", n.trees=500)
+yhat2 <- INSTRUMENTS[apply(predicted2, 1, which.max)]
+conf_mat2<- table(yhat2, InstrumentTestData$instrument)
+conf_mat2
+MisclassRate2<-1-sum(diag(conf_mat2))/nrow(InstrumentTestData)
+MisclassRate2
+IndividualMisclassRates2<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat2[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates2[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates2<-data.frame(IndividualMisclassRates2)
+`rownames<-`(IndividualMisclassrates2, INSTRUMENTS) 
+
+#boosted2, default shrinkage
+set.seed(3)
+Boosted2<- gbm(instrument~Attack+
+              DecayCoeff+
+              DecayDetermination+
+              DecaySignificance+
+              NumberFrequencies+
+              MedianFreqStrength+
+              FundamentalStrength+
+              FundamentalStrengthRatio+
+              RMSE1+
+              r_squared1+
+              RMSE2+
+              r_squared2+
+              RMSE3+
+              r_squared3+
+              RMSEBoosted+
+              r_squaredBoosted, 
+             data=InstrumentTrainingData, distribution= "multinomial", n.trees=500, interaction.depth=1)
+predicted2b<-predict(Boosted2, newdata = InstrumentTestData[,-c(1,2,11,20)], type="response", n.trees=500)
+yhat2b <- INSTRUMENTS[apply(predicted2b, 1, which.max)]
+conf_mat2b<- table(yhat2b, InstrumentTestData$instrument)
+conf_mat2b
+MisclassRate2b<-1-sum(diag(conf_mat2b))/nrow(InstrumentTestData)
+MisclassRate2b
+IndividualMisclassRates2b<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat2b[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates2b[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates2b<-data.frame(IndividualMisclassRates2b)
+`rownames<-`(IndividualMisclassrates2b, INSTRUMENTS) 
+
+#boosted3, default shrinkage, more trees, depth = 4
+set.seed(3)
+Boosted3<- gbm(instrument~Attack+
+              DecayCoeff+
+              DecayDetermination+
+              DecaySignificance+
+              NumberFrequencies+
+              MedianFreqStrength+
+              FundamentalStrength+
+              FundamentalStrengthRatio+
+              RMSE1+
+              r_squared1+
+              RMSE2+
+              r_squared2+
+              RMSE3+
+              r_squared3+
+              RMSEBoosted+
+              r_squaredBoosted, 
+             data=InstrumentTrainingData, distribution= "multinomial", n.trees=5000, interaction.depth=4)
+predicted2c<-predict(Boosted3, newdata = InstrumentTestData[,-c(1,2,11,20)], type="response", n.trees=5000)
+yhat2c <- INSTRUMENTS[apply(predicted2c, 1, which.max)]
+conf_mat2c<- table(yhat2c, InstrumentTestData$instrument)
+conf_mat2c
+MisclassRate2c<-1-sum(diag(conf_mat2c))/nrow(InstrumentTestData)
+MisclassRate2c
+IndividualMisclassRates2c<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat2c[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates2c[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates2c<-data.frame(IndividualMisclassRates2c)
+`rownames<-`(IndividualMisclassrates2c, INSTRUMENTS) 
+
+
+#boosted4, shrinkage = 0.2, more trees, depth = 4
+set.seed(4)
+Boosted4<- gbm(instrument~Attack+
+              DecayCoeff+
+              DecayDetermination+
+              DecaySignificance+
+              NumberFrequencies+
+              MedianFreqStrength+
+              FundamentalStrength+
+              FundamentalStrengthRatio+
+              RMSE1+
+              r_squared1+
+              RMSE2+
+              r_squared2+
+              RMSE3+
+              r_squared3+
+              RMSEBoosted+
+              r_squaredBoosted, 
+             data=InstrumentTrainingData, distribution= "multinomial", n.trees=500, shrinkage = 0.1, interaction.depth = 4)
+predicted2d<-predict(Boosted4, newdata = InstrumentTestData[,-c(1,2,11,20)], type="response", n.trees = 500)
+yhat2d <- INSTRUMENTS[apply(predicted2d, 1, which.max)]
+conf_mat2d<- table(yhat2d, InstrumentTestData$instrument)
+conf_mat2d
+MisclassRate2d<-1-sum(diag(conf_mat2d))/nrow(InstrumentTestData)
+MisclassRate2d
+IndividualMisclassRates2d<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat2d[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates2d[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates2d<-data.frame(IndividualMisclassRates2d)
+`rownames<-`(IndividualMisclassrates2d, INSTRUMENTS) 
+
+#logistic
+library(nnet)
+Log_Model<-multinom(instrument~Attack+
+              DecayCoeff+
+              DecayDetermination+
+              DecaySignificance+
+              NumberFrequencies+
+              MedianFreqStrength+
+              FundamentalStrength+
+              FundamentalStrengthRatio+
+              RMSE1+
+              r_squared1+
+              RMSE2+
+              r_squared2+
+              RMSE3+
+              r_squared3+
+              RMSEBoosted+
+              r_squaredBoosted, 
+             data=InstrumentTrainingData)
+yhat3<-predict(Log_Model, newdata = InstrumentTestData[,-c(1,2,11,20)], type="class")
+conf_mat3<- table(yhat3, InstrumentTestData$instrument)
+conf_mat3
+MisclassRate3<-1-sum(diag(conf_mat3))/nrow(InstrumentTestData)
+MisclassRate3
+IndividualMisclassRates3<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat3[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates3[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates3<-data.frame(IndividualMisclassRates3)
+`rownames<-`(IndividualMisclassrates3, INSTRUMENTS)
+
+#log2
+Log_Model2<-multinom(instrument~Attack+
+              DecayCoeff+
+              DecayDetermination+
+              DecaySignificance+
+              NumberFrequencies+
+              RMSE1+
+              r_squared1+
+              FundamentalStrengthRatio+
+              r_squared2+
+              RMSE2+
+              RMSE3+
+              RMSEBoosted+
+              MedianFreqStrength+
+              r_squaredBoosted, 
+             data=InstrumentTrainingData)
+yhat3b<-predict(Log_Model2, newdata = InstrumentTestData[,-c(1,2,11,20)], type="class")
+conf_mat3b<- table(yhat3b, InstrumentTestData$instrument)
+conf_mat3b
+MisclassRate3b<-1-sum(diag(conf_mat3b))/nrow(InstrumentTestData)
+MisclassRate3b
+IndividualMisclassRates3b<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat3b[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates3b[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates3b<-data.frame(IndividualMisclassRates3b)
+`rownames<-`(IndividualMisclassrates3b, INSTRUMENTS)
+```
+

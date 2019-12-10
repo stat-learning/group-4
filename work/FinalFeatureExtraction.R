@@ -78,7 +78,7 @@ identifyFrequencies<- function(note){
            freq=freq*note@samp.rate,
            Reject=FALSE)
   #Here we seek all local maxima
-  for (i in c(2:(max(mainFreq$freq)-1))){
+  for (i in c(2:(nrow(mainFreq)-1))){
     if (mainFreq$spec[i]<mainFreq$spec[i-1] |
         mainFreq$spec[i]<mainFreq$spec[i+1]){
       mainFreq$Reject[i]<-TRUE
@@ -285,13 +285,13 @@ Feature_Extract<- function(WaveObject){
 # Generating Data Set:
 #######################################################################
 
-setwd("~/group-4/Data/Web Data/")
-path = "~/group-4/Data/Web Data/"
+setwd("~/group-4/Data/Recorded Data/")
+path = "~/group-4/Data/Recorded Data/"
 out.file<-""
 file.names <- dir(path)
 
 FinalData <- matrix(nrow = length(file.names), ncol = 18)
-for(i in 4:7){
+for(i in 1:length(file.names)){
   FinalData[i,1]<-file.names[i]
   wave.object<-readMP3(file.names[i])%>%
     mono(which="both")
@@ -325,12 +325,12 @@ colnames(Instruments) <- c("FileName",
 
 Instruments<-Instruments%>%
   mutate(instrument=case_when(
-    substr(FileName, 1, 4)=="flut"~"Flute",
-    substr(FileName, 1, 4)=="guit"~"Guitar",
-    substr(FileName, 1, 4)=="mand"~"Mandolin",
-    substr(FileName, 1, 4)=="pian"~"Piano",
-    substr(FileName, 1, 4)=="ukul"~"Ukulele",
-    substr(FileName, 1, 4)=="viol"~"Violin"
+    substr(FileName, 1, 4)=="Flut"~"Flute",
+    substr(FileName, 1, 4)=="Guit"~"Guitar",
+    substr(FileName, 1, 4)=="Mand"~"Mandolin",
+    substr(FileName, 1, 4)=="Pian"~"Piano",
+    substr(FileName, 1, 4)=="Ukul"~"Ukulele",
+    substr(FileName, 1, 4)=="Viol"~"Violin"
   ))
 Instruments$instrument<-as.factor(Instruments$instrument)
 
@@ -340,5 +340,8 @@ for(i in 2:18){
   Instruments[,i]<-as.numeric(as.character(Instruments[,i]))
 }
 View(Instruments)
+
+
+write.csv(Instruments,'InstrumentTestData.csv')
 
 

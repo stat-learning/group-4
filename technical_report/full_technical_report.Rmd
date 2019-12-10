@@ -18,12 +18,13 @@ library(knitr)
 Abstract
 ==========
 
-  Musical instruments produce sound by generating rapid vibrations of a string or air in a tube that eventually reach our ears. Humans can recognize the sounds of notes played by different instruments because instruments such as a flute or a violin produce sound waves differently. The purpose of this project is to build a model that can also distinguish between the sound waves played by instruments and ultimately predict an instrument from an audio file. The approach to this analysis was to create predictors that measure factors such as harmonic frequencies or overtones, which differ across instruments. We found that applying statistical learning models like random forest, boosted trees, and multiple logistic regression produced results that performed well on the training data, but less so on the testing data.
+  Musical instruments produce sound by generating rapid vibrations of a string or air in a tube that eventually reach our ears. Humans can recognize the sounds of notes played by different instruments because instruments such as a flute or a violin produce sound waves differently. The purpose of this project is to build a model that can also distinguish between the sound waves played by instruments and ultimately predict an instrument from an audio file. The approach to this analysis was to create predictors that measure factors such as harmonic frequencies or overtones, which differ across instruments. We found that applying statistical learning models like random forest, boosted trees, and multiple logistic regression produced results that performed well overall on the training data, but only slightly better than random chance on the testing data.
 
 Introduction
 ==========
 
   The purpose of this project is to examine whether we can build a model that predicts the instrument being played from a sound recording. This project will utilize data from isolated sound recordings of different instruments being played, with predictors related to differences in the frequency wave patterns, the modulation of frequency or amplitude over time, or the prevalence of different overtones in the sound. The goal will be to predict which instrument is being played based on a sound recording.
+  Previous research has been conducted to try and predict the instrument played from a recording, and most involve fitting a sine curve to the sound waves in the audio file. However, our research could not determine the exact process behind fitting this curve to the sound wave, so our version involves summing up multiple sine curve fits. In Rafael Irizarry's $Music\ and\ Statistics\ Demo$, local harmonic estimation is used to separate the musical signals in a recording from the 'bare' sounds of the instruement. For example, taking the residuals from the sine curve of a flute should generate a wave that sounds like air blowing through a tube, and we expect violin residuals to sound like bow hairs sliding across steel strings. Our analysis also invloves exploring this relationship and attempts to reproduce Irizarry's results.
 
 The Data
 ==========
@@ -40,9 +41,9 @@ Exploratory Data Analysis
 
   In theory, we should be able to tell instruments apart based on qualities of their waveforms. For example, the three images below show waveforms from recordings of flute, violin, and ukulele. Despite similarities, they seem distinct enough that a human observer could tell these instruments apart solely by looking at graphs like these. 
 
-  ![](images/flute.png)
-  ![](images/violin.png)
-  ![](images/ukulele.png)
+  ![](images/flute1.png)
+  ![](images/violin1.png)
+  ![](images/ukulele1.png)
 
 ###Tonal Quality
 
@@ -65,12 +66,17 @@ Exploratory Data Analysis
 
   To analyze the attack and decay of each note, we started with a data frame that held a measurement for volume over a long list of times. An illustration of this for a Ukulele note is shown below. 
   
-  ![](images/UkuleleNote.png)
+  ![](images/ukulelevolume.png)
 
   We then created a function that filtered out all values that weren't local maxima, and then filtered out all values that were smaller than a certain threshold. After this, the function rescaled the units of time to actually reflect time in seconds. It also rescaled the volume to have a maximum of one, allowing us to compare the decay of a note without worrying about its volume relative to other instruments. The resulting data frame is illustrated below. 
 
-  ![](images/localMaxima.png)
+  ![](images/maxdataframe.png)
   Our measurement of attack was then the time difference between the start of the note and the maximum volume. The predictor for decay consisted of the coefficient, $R^2$ value, and $t$ statistic from the linear regression on $log(Amplitude) \sim time$.
+
+ ![](images/flutedecay.png)
+![](images/violindecay.png)
+![](images/ukuleledecay.png)
+
 
 
 ###Fitting a Sine Curve

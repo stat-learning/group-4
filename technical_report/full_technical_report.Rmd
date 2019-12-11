@@ -73,7 +73,6 @@ Exploratory Data Analysis
   ![](images/maxdataframe.png)
   Our measurement of attack was then the time difference between the start of the note and the maximum volume. The predictor for decay consisted of the coefficient, $R^2$ value, and $t$ statistic from the linear regression on $log(Amplitude) \sim time$.
 
- ![](images/flutedecay.png)
 ![](images/violindecay.png)
 ![](images/ukuleledecay.png)
 

@@ -15,3 +15,7 @@ Can we predict the instrument being played from a sound recording? This project 
 ## Presentation:
 
 https://docs.google.com/presentation/d/10CgSISZLrX_YQAtLi4rlCmlO2wRHVWVR_b2aXrsxUDM/edit?usp=sharing
+
+## Code:
+
+The code used for our anaylsis can be found in the R script titled "FinalFeatureExtraction.R" under the work folder. Under the same folder, the "models.Rmd" file contains code used to construct our classification models.

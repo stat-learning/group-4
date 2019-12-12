@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = F)
 
 ```{r message=F, include=F}
 library(knitr)
+library(kableExtra)
 ```
 
 
@@ -39,14 +40,19 @@ Feature Extraction Concepts
 ==========
   
   The features that we intend to extract from our observations relate to the attack of the note, some measure of the decay, and some measure of the tonal qualities of the instruments.
- 	In theory, we should be able to tell instruments apart based on qualities of their waveforms. For example, the three images below show waveforms from recordings of flute, violin, and ukulele. Despite similarities, they seem distinct enough that a human observer could tell these instruments apart solely by looking at graphs like those shown in Figure \ref{fig:flute_violin_uke}.
+ 	In theory, we should be able to tell instruments apart based on qualities of their waveforms. For example, the three images below show waveforms from recordings of flute, violin, and ukulele. Despite similarities, they seem distinct enough that a human observer could tell these instruments apart solely by looking at graphs like those shown in Figures \ref{fig:flute}, \ref{fig:uke}, and \ref{fig:violin}.
 
+```{r flute, out.width="99%", fig.cap="\\label{fig:flute}Waveforms"}
+include_graphics("images/flute1.png")
+```
 
-```{r flute_violin_uke, out.width="99%", fig.cap="\\label{fig:flute_violin_uke}Waveforms"}
-include_graphics(c("images/ukulele1.png", "images/flute1.png", "images/violin1.png"))
+```{r uke, out.width="99%", fig.cap="\\label{fig:uke}Waveforms"}
+include_graphics("images/ukulele1.png")
 ```
   
-
+```{r violin, out.width="99%", fig.cap="\\label{fig:violin}Waveforms"}
+include_graphics("images/violin1.png")
+```
 
 ###Tonal Quality
 
@@ -73,7 +79,7 @@ include_graphics("images/MainFrequencies.png")
   Another predictor related to the amplitude of the note is the decay: the rate at which a sound dies off to silence. For this measurement, we expect a plucked instrument to have a straightforward exponential decay to reflect the fast vibrations that occur just after being pulled back from equilibrium and released followed by the gradual decline in amplitude over time. On the other hand, a flute undergoes decay that is not quite as exponential, since the instrument produces music by blowing air through a tube, and the rate of decay depends on how long the musician holds onto the note.
   Since most instruments experience some amount of exponential decay over time in the form of $amplitude = e^{\beta_0 *time}$, we created a decay predictor by fitting a linear model to the log of the amplitude over time and extracting the coefficient of the model $log(amplitude) = \beta_0*time$.
 
-  To analyze the attack and decay of each note, we started with a data frame that held a measurement for volume over a long list of times. An illustration of this for a Ukulele note is shown in \ref{fig:data_frame}. 
+  To analyze the attack and decay of each note, we started with a data frame that held a measurement for volume over a long list of times. An illustration of this for a Ukulele note is shown in Figure \ref{fig:uke_vol}. 
   
 ```{r uke_vol, out.width="99%", fig.cap="\\label{fig:uke_vol} Ukulele Volume"}
 include_graphics("images/ukulelevolume.png")
@@ -116,7 +122,7 @@ Figure \ref{fig:fundfit}: fitting a sine curve to the simple flute data.
 include_graphics("images/Fund Fit.png")
 ```
 
-Figure \ref{fig:Resid1 fit.png}: the sine curve fit to the first residuals; notice how the frequency seems to have doubled, capturing the first overtone.
+Figure \ref{fig:resid1}: the sine curve fit to the first residuals; notice how the frequency seems to have doubled, capturing the first overtone.
 
 ```{r resid1, out.width="99%", fig.cap="\\label{fig:resid1} the sine curve fit to the first residuals; notice how the frequency seems to have doubled, capturing the first overtone"}
 include_graphics("images/Resid1 fit.png")
@@ -128,7 +134,7 @@ Figure \ref{fig:resid2}: the sine curve fit to the second order residuals; in th
 include_graphics("images/Resid2 fit.png")
 ```
 
-Figure \ref{fig:LHE Fit.png}: the boosted fit obtained by adding these three models together; this seems to be a very close fit to the data:
+Figure \ref{fig:LHE}: the boosted fit obtained by adding these three models together; this seems to be a very close fit to the data:
 
 ```{r LHE, out.width="99%", fig.cap="\\label{fig:LHE} the boosted fit obtained by adding these three models together; this seems to be a very close fit to the data:"}
 include_graphics("images/LHE Fit.png")
@@ -140,33 +146,34 @@ Exploratory Data Analysis
 ==========
 
 After extracting our predictors, we proceeded to create a data frame where each row was an observation and each column was a predictor. Our final feature extraction code is available in our github portfolio as FinalFeatureExtraction.R in the “work” folder. It takes as input a folder of any number of MP3 files where the first four letters of the file name are the first four letters of the instrument (for new data, it is only necessary to slightly modify the file directory part of the code to direct to a folder containing all of the files), and outputs a data frame with the predictor values for each instrument as well as a response variable equal to the name of the instrument. Our final list of predictors is shown below:
-Attack: Distance between note start and max amplitude
-DecayCoeff: The exponential decay coefficient from the log(amplitude) regression
-DecayDetermination: $R^2$ value from the log(amplitude) regression
-DecaySignificance: T statistic of coefficient from log(amplitude) regression
-NumberFrequencies: Number of “main” frequencies extracted from periodogram
-MedianFrequencyStrength: The median strength (with the max strength rescaled to 1) of frequencies
-FundamentalStrength: Strength of fundamental (lowest) frequency
-FundamentalStrengthRatio: Proportion of total amplitude concentrated in fundamental
-FirstStrengthRatio: Ratio of fundamental strength to first 
-RMSE1: root mean squared error produced from fitting a sine model to an interval in the sample
-r_squared1: Proportion of total variance explained from fitting sine curve
-RMSE2: RMSE produced from fitting a sine wave to the residuals of the first sine model
-r_squared2: proportion of total variance explained from fitting sine curve to first residuals
-RMSE3: RMSE produced from fitting a sine wave to second residuals
-R_squared3:proportion of total variance explained from fitting sine curve to second residuals 
-RMSEBoosted: RMSE from “boosted” model adding together all three sine fits.
-r_squaredBoosted: Proportion of total variance explained from boosted model
-Instrument: Categorical variable denoting the name of the instrument in the recording
+
+1. Attack: Distance between note start and max amplitude
+2. DecayCoeff: The exponential decay coefficient from the log(amplitude) regression
+3. DecayDetermination: $R^2$ value from the log(amplitude) regression
+4. DecaySignificance: T statistic of coefficient from log(amplitude) regression
+5. NumberFrequencies: Number of “main” frequencies extracted from periodogram
+6. MedianFrequencyStrength: The median strength (with the max strength rescaled to 1) of frequencies
+7. FundamentalStrength: Strength of fundamental (lowest) frequency
+8. FundamentalStrengthRatio: Proportion of total amplitude concentrated in fundamental
+9. FirstStrengthRatio: Ratio of fundamental strength to first 
+10. RMSE1: root mean squared error produced from fitting a sine model to an interval in the sample
+11. r_squared1: Proportion of total variance explained from fitting sine curve
+12. RMSE2: RMSE produced from fitting a sine wave to the residuals of the first sine model
+13. r_squared2: proportion of total variance explained from fitting sine curve to first residuals
+14. RMSE3: RMSE produced from fitting a sine wave to second residuals
+15. R_squared3:proportion of total variance explained from fitting sine curve to second residuals 
+16. RMSEBoosted: RMSE from “boosted” model adding together all three sine fits.
+17. r_squaredBoosted: Proportion of total variance explained from boosted model
+18. Instrument: Categorical variable denoting the name of the instrument in the recording
 
 Upon creating some two dimensional plots, we were able to discover correlations between different variables and gain an idea for their usefulness. We also discovered some systematic differences between our test and training data that proved problematic when we calculated test misclassification rates for our fitted models. 
 Figures \ref{fig:plotattackdecaytrain} and \ref{fig:plotattackdecaytest} illustrate the relationship between the attack and decay coefficients of our training and test data sets. 
 
-```{r plotattackdecaytrain, out.width="99%", fig.cap="\\label{fig:plotattackdecaytrain} Plot Attack"}
+```{r plotattackdecaytrain, out.width="99%", fig.cap="\\label{fig:plotattackdecaytrain} Plot of Attack"}
 include_graphics("images/PlotAttackDecayTraining.png")
 ```
 
-```{r plotattackdecaytest, out.width="99%", fig.cap="\\label{fig:plotattackdecaytest} Plot Attack"}
+```{r plotattackdecaytest, out.width="99%", fig.cap="\\label{fig:plotattackdecaytest} Plot of Attack"}
 include_graphics("images/PlotAttackDecayTest.png")
 ```
 
@@ -174,18 +181,19 @@ include_graphics("images/PlotAttackDecayTest.png")
 As can be seen, instruments that are plucked or hammered tend to have a much smaller attack coefficient than sustained instruments. This difference is much more pronounced in our test data. 
 Plotting the decay coefficient and the total number of frequencies present in an audio file yielded interesting results. The differences between the test and training data sets are very noticable, as seen in figures \ref{fig:coefnumtrain} and \ref{fig:coefnumtest}. 
 
-```{r coefnumtrain, out.width="99%", fig.cap="\\label{fig:coefnumtrain} Plot Attack"}
+```{r coefnumtrain, out.width="99%", fig.cap="\\label{fig:coefnumtrain} Plot of Decay"}
 include_graphics("images/PlotDecayCoeffNumFreqTrain.png")
 ```
 
-```{r coefnumtest, out.width="99%", fig.cap="\\label{fig:coefnumtest} Plot Attack"}
+```{r coefnumtest, out.width="99%", fig.cap="\\label{fig:coefnumtest} Plot of Decay"}
 include_graphics("images/PlotDecayCoeffNumFreqTest.png")
 ```
 
 In our training data, the mandolin samples have a strong separation from the rest of the data in that they have a large number of frequencies. Also, the flute samples tend to have a higher decay coefficient. However, in our test data, the piano samples have a large number of frequencies, while the mandolin and flute samples are clustered with the rest of the instruments. 
 
+Tables \ref{tab:datasummary} and \ref{tab:datasummary2} display the average values for the predictors for each instrument.
 
-```{r}
+```{r message=F}
 library(dplyr)
 library(knitr)
 InstrumentTrainingData<-read.csv("~/group-4/data/Web Data/InstrumentTrainingData.csv")
@@ -204,8 +212,14 @@ colnames(DataSummary) <- c("Instrument","Attack", "DecayCoeff", "DecayDeterminat
                            "NumberFrequencies", "FundamentalStrengthRatio", "RMSEBoosted",
                            "r_squaredBoosted")
 
-kable(DataSummary[,1:4])
-kable(DataSummary[c(1,5:8)])
+```
+
+```{r datasummary}
+kable(DataSummary[,1:4], caption="\\label{tab:datasummary}Predictors Summary")
+```
+
+```{r datasummary2}
+kable(DataSummary[c(1,5:8)], caption="\\label{tab:datasummary2}Predictors Summary")
 ```
 
 
@@ -215,7 +229,7 @@ Modeling
   Among the modeling approaches that we considered were a random forest model, boosted tree, multiple logistic regression, and QDA. Our first step was to train these models on our web data and use them to predict the data we recorded. The misclassification rates from this analysis give a good picture of the external validity of our models, since we are training on data from one source and predicting data from a completely different source.
 We started with tree models including random forest and boosted trees. The best performing of these was the random forest model, which had an overall misclassification rate of 0.43. For both random forest and boosted trees, we simply use every possible predictor to train, and optimize the parameters (number of trees, mtry, shrinkage parameters, etc.) based on test MSE. Due to the nature of tree models, including unimportant predictors will usually not lead to a huge overfitting problem since these predictors will generally not be chosen for partitions. 
 We also fit QDA and logistic (multinomial) models. We used QDA over LDA because the assumption of constant covariance between the predictors in each category seemed dubious in this case; for example, we would expect the correlation between the decay coefficient and decay determination ($R^2$) to be stronger for an instrument that has a consistent decay function like a plucked instrument as opposed to a violin. Unlike the models fit using tree methods, using the entire set of predictors for logistic regression or QDA leads to a strong possibility of overfitting (given that many of our predictors are highly correlated or simply not good predictors in general). For this reason, we chose to use the variable importance plot from the random forest (our best model so far) in Figure \ref{fig:varimportance} to select which variables should be most important. Based on experimenting with our test error rate, we used the 13 most important variables for our logistic model and the 6 most important variables for our QDA model. 
-	The detailed error rates for these models are shown in \ref{tab:table1}. We find that our random forest is overall the best model. The table also shows that the misclassification rates are generally driven by a few instruments which are most difficult to classify: especially mandolin. This is likely due to the differences in the mandolin test and training recordings. On the other hand, the flute seems to be much easier to classify. 
+	The detailed error rates for these models are shown in Table \ref{tab:table1}. We find that our random forest is overall the best model. The table also shows that the misclassification rates are generally driven by a few instruments which are most difficult to classify: especially mandolin. This is likely due to the differences in the mandolin test and training recordings. On the other hand, the flute seems to be much easier to classify. 
 
 
 ```{r varimportance, out.width="99%", fig.cap="\\label{fig:varimportance} Variable Importance Plot"}
@@ -254,7 +268,7 @@ kable(Table, caption="\\label{tab:table1}Training-Test Results")
 
 
 Our exploratory data analysis steps gave strong evidence that there are systematic differences between our training and test data. We are not randomly partitioning data into training and test data; rather, we are generating the data from two completely different sources. For this reason, there is likely an element of irreducible bias in our models created by the fact that the relationships between variables in our training data might be fundamentally different from in our test data. 
-	For comparison, we perform leave-one-out cross validation on the same models from our training data. Since we have only 60 observations, LOOCV gives us an easily computable and relatively unbiased estimate of test misclassification rate which can be interpreted as the expected error rate if we were to predict more data from the exact same online sources, instead of predicting data from different sources. This reveals misclassification rates that are much lower compared with the rates from before (using the test data), using the exact same models with the same parameters. In this case, our boosted tree model performs the best with an estimated error rate of 0.15. All of our models perform significantly better compared with the results from using test data. It is difficult to assess whether there is an overall pattern in terms of which instruments are most difficult to classify; it seems that different models perform better on different instruments
+	For comparison, we perform leave-one-out cross validation on the same models from our training data. Since we have only 60 observations, LOOCV gives us an easily computable and relatively unbiased estimate of test misclassification rate which can be interpreted as the expected error rate if we were to predict more data from the exact same online sources, instead of predicting data from different sources. This reveals misclassification rates that are much lower compared with the rates from before (using the test data), using the exact same models with the same parameters, see Table \ref{tab:table2}. In this case, our boosted tree model performs the best with an estimated error rate of 0.15. All of our models perform significantly better compared with the results from using test data. It is difficult to assess whether there is an overall pattern in terms of which instruments are most difficult to classify; it seems that different models perform better on different instruments.
 
 
 ```{r}
@@ -291,16 +305,16 @@ Discussion
 
 Overall, our results indicate that the features we extracted are indeed powerful enough to predict the instrument significantly better than by random chance, although there is significant error. Our best model (random forest) was able to predict data generated from completely different sources with over 50% accuracy, which strongly indicates some level of external validity. 
  
-  Irizarry’s $Music and Statistics Demo$ suggested that removing the music signals from a recording will leave the ‘bare’ sounds of an instrument. To compare our results to Irizarry’s, we exported the residuals from the sine curve of the sound waves and listened to the resulting noise. Following the link to our presentation, the audio files for these residuals are posted in the $Playing Residuals$ slides. The audio files in the presentation were played at 10% speed and doubled so that sound could actually be heard. Since the recordings were short in length to begin with, and the output from our sine function filtered the number of observations even more, the residual sound waves had a duration of 0.01 seconds. From our work, the instrument that appears to have residuals sounding most like the ‘bare’ instrument was the flute, which had an audio that sounded similar to a quick breath of air flowing through a tube. The rest of the instruments do not exactly produce sounds that resemble their ‘bare’ instruments, but this was likely attributed to having short audio samples. Lengthening the duration of the sound recordings would therefore be a natural next step for this project.
+  Irizarry’s $Music\ and\ Statistics\ Demo$ suggested that removing the music signals from a recording will leave the ‘bare’ sounds of an instrument. To compare our results to Irizarry’s, we exported the residuals from the sine curve of the sound waves and listened to the resulting noise. Following the link to our presentation [here](https://docs.google.com/presentation/d/10CgSISZLrX_YQAtLi4rlCmlO2wRHVWVR_b2aXrsxUDM/edit?usp=sharing), the audio files for these residuals are posted in the $Playing\ Residuals$ slides. The audio files in the presentation were played at 10% speed and doubled so that sound could actually be heard. Since the recordings were short in length to begin with, and the output from our sine function filtered the number of observations even more, the residual sound waves had a duration of 0.01 seconds. From our work, the instrument that appears to have residuals sounding most like the ‘bare’ instrument was the flute, which had an audio that sounded similar to a quick breath of air flowing through a tube. The rest of the instruments do not exactly produce sounds that resemble their ‘bare’ instruments, but this was likely attributed to having short audio samples. Lengthening the duration of the sound recordings would therefore be a natural next step for this project.
 
-  An extension of this project would be to include more instruments in the analysis and also consider methods to apply our functions to an entire song played by an individual instrument. Specific instruments that would be useful to include are percussion instruments, such as a snare drum and cymbals, along with reed instruments such as the clarinet. It would also be useful to use samples from multiple copies of each instrument, so reduce differences between test and training data sets that we experienced. 
+  Another extension of this project would be to include more instruments in the analysis and also consider methods to apply our functions to an entire song played by an individual instrument. Specific instruments that would be useful to include are percussion instruments, such as a snare drum and cymbals, along with reed instruments such as the clarinet. It would also be useful to use samples from multiple copies of each instrument, so reduce differences between test and training data sets that we experienced. 
 In the periodograms of our samples, peaks usually consisted of multiple points, instead of just the peak frequency. If multiple points were part of the same peak, we filtered them out because our main concern was the strength of the peak frequency. A possible new predictor would be to include some measurement of the widths of these peaks.
 
 
 References
 ==========
 
-Irizarry, Rafael. “Rafael A. Irizarry's Music and Statistics Demo.” Johns Hopkins Biostatistics, www.biostat.jhsph.edu/~ririzarr/Demo/.
+Irizarry, Rafael. “Rafael A. Irizarry's Music and Statistics Demo.” Johns Hopkins Biostatistics.
 http://www.biostat.jhsph.edu/~ririzarr/Demo/
 
 

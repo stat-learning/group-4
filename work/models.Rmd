@@ -244,3 +244,181 @@ IndividualMisclassrates3b<-data.frame(IndividualMisclassRates3b)
 `rownames<-`(IndividualMisclassrates3b, INSTRUMENTS)
 ```
 
+
+
+
+
+
+
+##Cross validating models from training data:
+
+#boosted tree
+
+```{r}
+INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
+library(gbm)
+library(randomForest)
+InstrumentTrainingData<-read.csv("InstrumentTrainingData.csv")
+#cross validate
+set.seed(12)
+
+###Boosted Tree
+InstrumentTrain<-InstrumentTrainingData[,-c(1, 2, 11)]
+predictions<-rep(NA, nrow(InstrumentTrainingData))
+for (p in c(1:nrow(InstrumentTrainingData))){
+  training_data<-InstrumentTrain[-p,]
+  test_data<-InstrumentTrain[p,]
+  qda.fit<-gbm(instrument~.,
+              data=training_data,
+              n.trees=100)
+  qda.class<-predict(qda.fit, newdata = test_data, n.trees = 500)
+  yhat2 <- INSTRUMENTS[apply(qda.class, 1, which.max)]
+  predictions[p]<-yhat2
+}
+
+conf_mat<- table(predictions, InstrumentTrain$instrument)
+MisclassRate<-1-sum(diag(conf_mat))/nrow(InstrumentTrain)
+
+IndividualMisclassRates<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates<-data.frame(IndividualMisclassRates)
+`rownames<-`(IndividualMisclassrates, INSTRUMENTS)
+
+conf_mat
+MisclassRate
+IndividualMisclassrates
+
+
+```
+
+###QDA model
+```{r}
+INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
+library(gbm)
+library(MASS)
+library(randomForest)
+InstrumentTrainingData<-read.csv("InstrumentTrainingData.csv")
+#cross validate
+set.seed(12)
+
+InstrumentTrain<-InstrumentTrainingData[,-c(1, 2, 11)]
+predictions<-rep(NA, nrow(InstrumentTrainingData))
+for (p in c(1:nrow(InstrumentTrainingData))){
+  training_data<-InstrumentTrain[-p,]
+  test_data<-InstrumentTrain[p,]
+  qda.fit<-qda(instrument~Attack+
+               DecayCoeff+
+               DecayDetermination+
+               NumberFrequencies+
+               MedianFreqStrength, 
+             data=training_data)
+  qda.class<-predict(qda.fit, newdata = test_data, n.trees = 500)
+  predictions[p]<-qda.class$class
+}
+
+conf_mat<- table(predictions, InstrumentTrain$instrument)
+MisclassRate<-1-sum(diag(conf_mat))/nrow(InstrumentTrain)
+
+IndividualMisclassRates<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates<-data.frame(IndividualMisclassRates)
+`rownames<-`(IndividualMisclassrates, INSTRUMENTS)
+
+
+conf_mat
+MisclassRate
+IndividualMisclassrates
+```
+
+##Random Forest Model
+```{r}
+INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
+library(gbm)
+library(MASS)
+library(randomForest)
+InstrumentTrainingData<-read.csv("InstrumentTrainingData.csv")
+#cross validate
+set.seed(12)
+
+InstrumentTrain<-InstrumentTrainingData[,-c(1, 2, 11)]
+predictions<-rep(NA, nrow(InstrumentTrainingData))
+for (p in c(1:nrow(InstrumentTrainingData))){
+  training_data<-InstrumentTrain[-p,]
+  test_data<-InstrumentTrain[p,]
+  qda.fit<-randomForest(y=training_data$instrument,
+                        x=training_data[, -c(17, 18)],
+                        data=training_data)
+  qda.class<-predict(qda.fit, newdata = test_data, n.trees = 500)
+  predictions[p]<-qda.class
+}
+
+conf_mat<- table(predictions, InstrumentTrain$instrument)
+MisclassRate<-1-sum(diag(conf_mat))/nrow(InstrumentTrain)
+
+IndividualMisclassRates<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates<-data.frame(IndividualMisclassRates)
+`rownames<-`(IndividualMisclassrates, INSTRUMENTS)
+
+
+conf_mat
+MisclassRate
+IndividualMisclassrates
+```
+
+
+##Logistic Model
+```{r}
+INSTRUMENTS<-c("Flute", "Guitar", "Mandolin", "Piano", "Ukulele", "Violin")
+library(gbm)
+library(nnet)
+library(MASS)
+library(randomForest)
+InstrumentTrainingData<-read.csv("InstrumentTrainingData.csv")
+#cross validate
+set.seed(12)
+
+InstrumentTrain<-InstrumentTrainingData[,-c(1, 2, 11)]
+predictions<-rep(NA, nrow(InstrumentTrainingData))
+for (p in c(1:nrow(InstrumentTrainingData))){
+  training_data<-InstrumentTrain[-p,]
+  test_data<-InstrumentTrain[p,]
+  qda.fit<-multinom(instrument~.-FundamentalStrength-r_squared3,
+              data=training_data)
+  qda.class<-predict(qda.fit, newdata = test_data, n.trees = 500)
+  predictions[p]<-qda.class
+}
+
+conf_mat<- table(predictions, InstrumentTrain$instrument)
+MisclassRate<-1-sum(diag(conf_mat))/nrow(InstrumentTrain)
+
+IndividualMisclassRates<-rep(NA, 6)
+for (i in 1:6){
+  Predictions<-conf_mat[,i]
+  NumberPredictions<-sum(Predictions)
+  NumberIncorrect<-sum(Predictions[-i])
+  IndividualMisclassRates[i]<-NumberIncorrect/NumberPredictions
+}
+IndividualMisclassrates<-data.frame(IndividualMisclassRates)
+`rownames<-`(IndividualMisclassrates, INSTRUMENTS)
+
+
+conf_mat
+MisclassRate
+IndividualMisclassrates
+```

@@ -315,7 +315,8 @@ for (p in c(1:nrow(InstrumentTrainingData))){
                DecayCoeff+
                DecayDetermination+
                NumberFrequencies+
-               MedianFreqStrength, 
+               MedianFreqStrength+
+                 r_squared1, 
              data=training_data)
   qda.class<-predict(qda.fit, newdata = test_data, n.trees = 500)
   predictions[p]<-qda.class$class
@@ -398,7 +399,20 @@ predictions<-rep(NA, nrow(InstrumentTrainingData))
 for (p in c(1:nrow(InstrumentTrainingData))){
   training_data<-InstrumentTrain[-p,]
   test_data<-InstrumentTrain[p,]
-  qda.fit<-multinom(instrument~.-FundamentalStrength-r_squared3,
+  qda.fit<-multinom(instrument~Attack+
+              DecayCoeff+
+              DecayDetermination+
+              DecaySignificance+
+              NumberFrequencies+
+              RMSE1+
+              r_squared1+
+              FundamentalStrengthRatio+
+              r_squared2+
+              RMSE2+
+              RMSE3+
+              RMSEBoosted+
+              MedianFreqStrength+
+              r_squaredBoosted,
               data=training_data)
   qda.class<-predict(qda.fit, newdata = test_data, n.trees = 500)
   predictions[p]<-qda.class
@@ -422,3 +436,4 @@ conf_mat
 MisclassRate
 IndividualMisclassrates
 ```
+

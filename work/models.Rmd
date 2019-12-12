@@ -316,7 +316,7 @@ for (p in c(1:nrow(InstrumentTrainingData))){
   qda.fit<-gbm(instrument~.,
               data=training_data,
               n.trees=100)
-  qda.class<-predict(qda.fit, newdata = test_data, n.trees = 500)
+  qda.class<-predict(qda.fit, newdata = test_data, n.trees = 100)
   yhat2 <- INSTRUMENTS[apply(qda.class, 1, which.max)]
   predictions[p]<-yhat2
 }

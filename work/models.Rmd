@@ -37,6 +37,7 @@ IndividualMisclassrates1<-data.frame(IndividualMisclassRates1)
 `rownames<-`(IndividualMisclassrates1, INSTRUMENTS)
 
 
+
 library(gbm)
 set.seed(2)
 Boosted1<- gbm(instrument~Attack+
@@ -242,6 +243,50 @@ for (i in 1:6){
 }
 IndividualMisclassrates3b<-data.frame(IndividualMisclassRates3b)
 `rownames<-`(IndividualMisclassrates3b, INSTRUMENTS)
+
+#QDA Model is here/below.
+library(MASS)
+training_data<-read.csv("InstrumentTrainingData.csv")
+test_data<-read.csv("InstrumentTestData.csv")
+
+qda.fit<-qda(instrument~Attack+
+               DecayCoeff+
+               DecayDetermination+
+               NumberFrequencies+
+               MedianFreqStrength+
+               r_squared1, 
+             data=training_data)
+qda.class<-predict(qda.fit, newdata = test_data)$class
+test_data<-test_data%>%
+  mutate(QDApredictions=qda.class)
+correct<-c(1:length(test_data$X))
+for (i in c(1:length(test_data$X))){
+  if (test_data$instrument[i]==test_data$QDApredictions[i]){correct[i]<-0}
+  if (test_data$instrument[i]!=test_data$QDApredictions[i]){correct[i]<-1}
+}
+test_data<-test_data%>%
+  mutate(correct=correct)
+
+flute<-test_data%>%
+  filter(instrument=="Flute")
+guitar<-test_data%>%
+  filter(instrument=="Guitar")
+mandolin<-test_data%>%
+  filter(instrument=="Mandolin")
+piano<-test_data%>%
+  filter(instrument=="Piano")
+ukulele<-test_data%>%
+  filter(instrument=="Ukulele")
+violin<-test_data%>%
+  filter(instrument=="Violin")
+
+mean(test_data$correct)
+mean(flute$correct)
+mean(guitar$correct)
+mean(mandolin$correct)
+mean(piano$correct)
+mean(ukulele$correct)
+mean(violin$correct)
 ```
 
 

@@ -152,6 +152,11 @@ library(knitr)
 kable(Table, caption="\\label{tab:table1}Table of Misclassification Rates")
 ```
 
+Figure \ref{fig:varimportance}
+```{r varimportance, out.width="99%", fig.cap="\\label{fig:varimportance} Variable Importance Plot"}
+include_graphics("images/varimportance.png")
+```
+
 Discussion
 ==========
 

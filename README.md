@@ -18,4 +18,4 @@ https://docs.google.com/presentation/d/10CgSISZLrX_YQAtLi4rlCmlO2wRHVWVR_b2aXrsx
 
 ## Code:
 
-The code used for our anaylsis can be found in the R script titled "FinalFeatureExtraction.R" under the work folder. Under the same folder, the "models.Rmd" file contains code used to construct our classification models.
+Within the "technical_report" folder, the code used for our anaylsis can be found in the R script titled "FinalFeatureExtraction.R" under the R_code folder. Under the same folder, the "models.Rmd" file contains code used to construct our classification models.

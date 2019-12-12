@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = F)
 
 ```
 
-```{r}
+```{r message=F, include=F}
 library(knitr)
 ```
 
@@ -160,12 +160,34 @@ r_squaredBoosted: Proportion of total variance explained from boosted model
 Instrument: Categorical variable denoting the name of the instrument in the recording
 
 Upon creating some two dimensional plots, we were able to discover correlations between different variables and gain an idea for their usefulness. We also discovered some systematic differences between our test and training data that proved problematic when we calculated test misclassification rates for our fitted models. 
-Figures \ref{fig:PlotAttackDecayTraining.png} and \ref{fig:PlotAttackDecayTest.png} illustrate the relationship between the attack and decay coefficients of our training and test data sets. As can be seen, instruments that are plucked or hammered tend to have a much smaller attack coefficient than sustained instruments. This difference is much more pronounced in our test data. 
-Plotting the decay coefficient and the total number of frequencies present in an audio file yielded interesting results. The differences between the test and training data sets are very noticable, as seen in figures \ref{fig:PlotDecayCoeffNumFreqTraining.png} and \ref{fig:PlotDecayCoeffNumFreqTest.png}. In our training data, the mandolin samples have a strong separation from the rest of the data in that they have a large number of frequencies. Also, the flute samples tend to have a higher decay coefficient. However, in our test data, the piano samples have a large number of frequencies, while the mandolin and flute samples are clustered with the rest of the instruments. 
+Figures \ref{fig:plotattackdecaytrain} and \ref{fig:plotattackdecaytest} illustrate the relationship between the attack and decay coefficients of our training and test data sets. 
+
+```{r plotattackdecaytrain, out.width="99%", fig.cap="\\label{fig:plotattackdecaytrain} Plot Attack"}
+include_graphics("images/PlotAttackDecayTraining.png")
+```
+
+```{r plotattackdecaytest, out.width="99%", fig.cap="\\label{fig:plotattackdecaytest} Plot Attack"}
+include_graphics("images/PlotAttackDecayTest.png")
+```
+
+
+As can be seen, instruments that are plucked or hammered tend to have a much smaller attack coefficient than sustained instruments. This difference is much more pronounced in our test data. 
+Plotting the decay coefficient and the total number of frequencies present in an audio file yielded interesting results. The differences between the test and training data sets are very noticable, as seen in figures \ref{fig:coefnumtrain} and \ref{fig:coefnumtest}. 
+
+```{r coefnumtrain, out.width="99%", fig.cap="\\label{fig:coefnumtrain} Plot Attack"}
+include_graphics("images/PlotDecayCoeffNumFreqTrain.png")
+```
+
+```{r coefnumtest, out.width="99%", fig.cap="\\label{fig:coefnumtest} Plot Attack"}
+include_graphics("images/PlotDecayCoeffNumFreqTest.png")
+```
+
+In our training data, the mandolin samples have a strong separation from the rest of the data in that they have a large number of frequencies. Also, the flute samples tend to have a higher decay coefficient. However, in our test data, the piano samples have a large number of frequencies, while the mandolin and flute samples are clustered with the rest of the instruments. 
 
 
 ```{r}
 library(dplyr)
+library(knitr)
 InstrumentTrainingData<-read.csv("~/group-4/data/Web Data/InstrumentTrainingData.csv")
 InstrumentTrain<-InstrumentTrainingData[,-c(1, 2, 11)]
 DataSummary<-InstrumentTrain%>%
@@ -192,8 +214,13 @@ Modeling
 
   Among the modeling approaches that we considered were a random forest model, boosted tree, multiple logistic regression, and QDA. Our first step was to train these models on our web data and use them to predict the data we recorded. The misclassification rates from this analysis give a good picture of the external validity of our models, since we are training on data from one source and predicting data from a completely different source.
 We started with tree models including random forest and boosted trees. The best performing of these was the random forest model, which had an overall misclassification rate of 0.43. For both random forest and boosted trees, we simply use every possible predictor to train, and optimize the parameters (number of trees, mtry, shrinkage parameters, etc.) based on test MSE. Due to the nature of tree models, including unimportant predictors will usually not lead to a huge overfitting problem since these predictors will generally not be chosen for partitions. 
-We also fit QDA and logistic (multinomial) models. We used QDA over LDA because the assumption of constant covariance between the predictors in each category seemed dubious in this case; for example, we would expect the correlation between the decay coefficient and decay determination ($R^2$) to be stronger for an instrument that has a consistent decay function like a plucked instrument as opposed to a violin. Unlike the models fit using tree methods, using the entire set of predictors for logistic regression or QDA leads to a strong possibility of overfitting (given that many of our predictors are highly correlated or simply not good predictors in general). For this reason, we chose to use the variable importance plot from the random forest (our best model so far) to select which variables should be most important. Based on experimenting with our test error rate, we used the 13 most important variables for our logistic model and the 6 most important variables for our QDA model. 
+We also fit QDA and logistic (multinomial) models. We used QDA over LDA because the assumption of constant covariance between the predictors in each category seemed dubious in this case; for example, we would expect the correlation between the decay coefficient and decay determination ($R^2$) to be stronger for an instrument that has a consistent decay function like a plucked instrument as opposed to a violin. Unlike the models fit using tree methods, using the entire set of predictors for logistic regression or QDA leads to a strong possibility of overfitting (given that many of our predictors are highly correlated or simply not good predictors in general). For this reason, we chose to use the variable importance plot from the random forest (our best model so far) in Figure \ref{fig:varimportance} to select which variables should be most important. Based on experimenting with our test error rate, we used the 13 most important variables for our logistic model and the 6 most important variables for our QDA model. 
 	The detailed error rates for these models are shown in \ref{tab:table1}. We find that our random forest is overall the best model. The table also shows that the misclassification rates are generally driven by a few instruments which are most difficult to classify: especially mandolin. This is likely due to the differences in the mandolin test and training recordings. On the other hand, the flute seems to be much easier to classify. 
+
+
+```{r varimportance, out.width="99%", fig.cap="\\label{fig:varimportance} Variable Importance Plot"}
+include_graphics("images/varimportance.png")
+```
 
 
 ```{r}
@@ -221,7 +248,7 @@ Table <- as.data.frame(t(as.matrix(table)))
 
 
 ```{r table1, out.width="99%"}
-library(knitr)
+
 kable(Table, caption="\\label{tab:table1}Training-Test Results")
 ```
 
@@ -257,10 +284,6 @@ library(knitr)
 kable(Table2, caption="\\label{tab:table2}Cross Validation Results")
 ```
 
-Figure \ref{fig:varimportance}
-```{r varimportance, out.width="99%", fig.cap="\\label{fig:varimportance} Variable Importance Plot"}
-include_graphics("images/varimportance.png")
-```
 
 
 Discussion
